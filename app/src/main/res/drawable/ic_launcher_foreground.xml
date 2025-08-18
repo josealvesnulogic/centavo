@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Círculo claro para contraste -->
+    <path
+        android:fillColor="#79C2FF"
+        android:pathData="M54,10a44,44 0,1 1,0 88a44,44 0,1 1,0 -88z"/>
+    <!-- Sinal C estilizado -->
+    <path
+        android:fillColor="#0B2545"
+        android:pathData="M70,40c-4,-6 -11,-10 -19,-10c-13,0 -24,11 -24,24s11,24 24,24c8,0 15,-4 19,-10l-8,-5c-2,4 -6,7 -11,7c-8,0 -14,-7 -14,-16s6,-16 14,-16c5,0 9,3 11,7l8,-5z"/>
+</vector>
