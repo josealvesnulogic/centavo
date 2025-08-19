@@ -1,10 +1,16 @@
 package com.centavo.app.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+// Remova a importação individual de SegmentedButton se você a adicionou manualmente
+// import androidx.compose.material3.SegmentedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardOptions
+// Corrija a importação duplicada de KeyboardOptions
+// import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.centavo.app.model.Expense
@@ -13,8 +19,13 @@ import com.centavo.app.util.Brl
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
+import androidx.compose.material3.SegmentedButtonDefaults // Mantenha esta importação
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpenseFormScreen(
@@ -27,7 +38,9 @@ fun ExpenseFormScreen(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     )
-    var type by remember { mutableStateOf(ExpenseType.ONE_TIME) }
+    var selectedTypeIndex by remember { mutableStateOf(ExpenseType.ONE_TIME.ordinal) } // Rastrear o índice selecionado
+    val expenseTypes = ExpenseType.values() // Array de todos os tipos de despesa
+
     var totalInstallments by remember { mutableStateOf("6") }
     var currentInstallment by remember { mutableStateOf("1") }
     var category by remember { mutableStateOf("Geral") }
@@ -61,25 +74,23 @@ fun ExpenseFormScreen(
 
             // Tipo
             Text("Tipo", style = MaterialTheme.typography.labelLarge)
-            SegmentedButtonRow {
-                SegmentedButton(
-                    selected = type == ExpenseType.ONE_TIME,
-                    onClick = { type = ExpenseType.ONE_TIME },
-                    label = { Text("Única") }
-                )
-                SegmentedButton(
-                    selected = type == ExpenseType.FIXED,
-                    onClick = { type = ExpenseType.FIXED },
-                    label = { Text("Fixa") }
-                )
-                SegmentedButton(
-                    selected = type == ExpenseType.INSTALLMENT,
-                    onClick = { type = ExpenseType.INSTALLMENT },
-                    label = { Text("Parcelada") }
-                )
+            // Use o SingleChoiceSegmentedButtonRow para seleção única
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                expenseTypes.forEachIndexed { index, expenseType ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = expenseTypes.size),
+                        onClick = { selectedTypeIndex = index },
+                        selected = index == selectedTypeIndex
+                    ) {
+                        Text(expenseType.name.replace("_", " ").lowercase()
+                            .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }) // Formata o nome para exibição
+                    }
+                }
             }
 
-            if (type == ExpenseType.INSTALLMENT) {
+            val currentExpenseType = expenseTypes[selectedTypeIndex] // Obter o tipo de despesa atual
+
+            if (currentExpenseType == ExpenseType.INSTALLMENT) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = currentInstallment, onValueChange = { currentInstallment = it.filter(Char::isDigit) },
@@ -120,17 +131,17 @@ fun ExpenseFormScreen(
                 Button(
                     onClick = {
                         val amount = amountText.replace(".", "").replace(",", ".").toBigDecimal()
-                        val date = java.time.LocalDate.ofInstant(
+                        val date = LocalDateTime.ofInstant(
                             Instant.ofEpochMilli(datePickerState.selectedDateMillis!!),
                             ZoneId.systemDefault()
-                        )
+                        ).toLocalDate()
                         val expense = Expense(
                             title = title.trim(),
                             amount = amount,
                             dueDate = date,
-                            type = type,
-                            totalInstallments = if (type == ExpenseType.INSTALLMENT) totalInstallments.toIntOrNull() else null,
-                            currentInstallment = if (type == ExpenseType.INSTALLMENT) currentInstallment.toIntOrNull() else null,
+                            type = currentExpenseType, // Usar o tipo de despesa selecionado
+                            totalInstallments = if (currentExpenseType == ExpenseType.INSTALLMENT) totalInstallments.toIntOrNull() else null,
+                            currentInstallment = if (currentExpenseType == ExpenseType.INSTALLMENT) currentInstallment.toIntOrNull() else null,
                             category = category.takeIf { it.isNotBlank() },
                             note = note.takeIf { it.isNotBlank() }
                         )
